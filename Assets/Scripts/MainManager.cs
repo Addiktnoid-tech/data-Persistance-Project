@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -10,12 +9,15 @@ public class MainManager : MonoBehaviour
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
+    public GameObject BackToMenuButton;
 
     public Text ScoreText;
+    public Text HighScoreText;
     public GameObject GameOverText;
 
     private bool m_Started = false;
     private int m_Points;
+    private Playerdata playerData;
 
     private bool m_GameOver = false;
 
@@ -43,6 +45,21 @@ public class MainManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        playerData = PlayerSession.Instance.GetPlayerData();
+
+
+        if (playerData.HighScores.Count > 0)
+        {
+            ScoreEntry bestScore = playerData.HighScores[0];
+
+            HighScoreText.text = "High Score: " +
+                                 bestScore.Score + " - " +
+                                 bestScore.Username;
+        }
+        else
+        {
+            HighScoreText.text = "High Score: 0";
+        }
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
 
@@ -86,12 +103,42 @@ public class MainManager : MonoBehaviour
     void AddPoint(int point)
     {
         m_Points += point;
+
         ScoreText.text = $"Score : {m_Points}";
+
+        Debug.Log("Pontuação atual: " + m_Points);
+
+        if (playerData.HighScores.Count == 0 ||
+    m_Points > playerData.HighScores[0].Score)
+        {
+            HighScoreText.text = "High Score: " +
+                                 m_Points + " - " +
+                                 PlayerSession.Instance.Username;
+        }
     }
+
 
     public void GameOver()
     {
+        if (m_GameOver)
+            return;
+
         m_GameOver = true;
+
+        if (m_Points > 0)
+        {
+            SaveSystem.AddHighScore(
+                playerData,
+                PlayerSession.Instance.Username,
+                m_Points
+            );
+        }
+        BackToMenuButton.SetActive(true);
         GameOverText.SetActive(true);
+    }
+
+    public void BackToMenu()
+    {
+        SceneManager.LoadScene("Menu");
     }
 }
